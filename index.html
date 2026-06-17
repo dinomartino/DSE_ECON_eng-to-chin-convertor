@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>經濟科翻譯提示產生器 · 英 → 繁中</title>
+  <title>DSE ECON翻譯提示產生器 · 英 → 繁中</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -203,18 +203,18 @@
 </head>
 <body>
   <header>
-    <h1>經濟科翻譯提示產生器 &nbsp;英 → 繁中</h1>
-    <p>根據香港經濟科詞彙表（1,320 個官方詞彙）建立提示，可複製到 ChatGPT、Gemini、Claude 或任何 AI 聊天機械人使用。</p>
+    <h1>DSE Econ翻譯提示產生器 &nbsp;英 → 中</h1>
+    <p>根據香港考評局經濟科詞彙表（1,320 個官方詞彙）建立提示，可複製到 ChatGPT、Gemini、Claude 或任何 AI 聊天機械人使用。</p>
   </header>
 
   <div class="container">
 
     <!-- Input -->
     <div class="card">
-      <label for="input-text">輸入你的經濟科問題或英文內容</label>
-      <textarea id="input-text" placeholder="例如：How does aggregate demand affect the price level in a Keynesian model?"></textarea>
+      <label for="input-text">輸入你的Econ問題或英文內容</label>
+      <textarea id="input-text" placeholder="例如：How does aggregate demand affect the price level?"></textarea>
       <div class="actions">
-        <button class="btn-primary" id="btn-build">建立翻譯提示</button>
+        <button class="btn-primary" id="btn-build">建立翻譯Prompt</button>
         <button class="btn-secondary" id="btn-clear">清除</button>
       </div>
       <div class="error-box" id="error-box"></div>
@@ -234,10 +234,9 @@
       <label>你的提示 — 複製並貼上到任何 AI 聊天機械人</label>
       <div class="prompt-box" id="prompt-output"></div>
       <div class="copy-row">
-        <button class="btn-secondary" id="btn-copy">複製提示</button>
-        <button class="btn-primary" id="btn-gemini">複製並開啟 Gemini</button>
+        <button class="btn-primary" id="btn-copy">複製提示</button>
       </div>
-      <p class="hint">將內容貼上到 ChatGPT、Gemini、Claude 或你慣用的 AI，即可取得繁體中文（香港標準）翻譯。<strong>開啟 Gemini</strong> 會複製提示並在新分頁開啟 Gemini，貼上即可（⌘/Ctrl + V）。</p>
+      <p class="hint">將內容貼上到 ChatGPT、Gemini、Claude 或你慣用的 AI，即可取得繁體中文（香港標準）翻譯。</p>
     </div>
 
   </div>
@@ -249,7 +248,6 @@
     const btnBuild = document.getElementById("btn-build");
     const btnClear = document.getElementById("btn-clear");
     const btnCopy = document.getElementById("btn-copy");
-    const btnGemini = document.getElementById("btn-gemini");
     const matchesSection = document.getElementById("matches-section");
     const matchesGrid = document.getElementById("matches-grid");
     const matchCount = document.getElementById("match-count");
@@ -346,22 +344,6 @@
         btnCopy.textContent = "已複製！";
         setTimeout(() => btnCopy.textContent = "複製提示", 1500);
       });
-    });
-
-    // Copy the prompt, then open Gemini in a new tab so the user can paste it.
-    // Gemini's web app has no reliable URL param to prefill the prompt, so we
-    // open the tab first (inside the click handler, to avoid popup blocking)
-    // and copy in parallel.
-    btnGemini.addEventListener("click", () => {
-      const tab = window.open("https://gemini.google.com/app", "_blank", "noopener");
-      navigator.clipboard.writeText(promptOutput.textContent).then(() => {
-        btnGemini.textContent = "已複製 — 請在 Gemini 貼上";
-        setTimeout(() => btnGemini.innerHTML = "複製並開啟 Gemini", 2500);
-      }).catch(() => {
-        btnGemini.textContent = "已開啟 Gemini — 請手動複製";
-        setTimeout(() => btnGemini.innerHTML = "複製並開啟 Gemini", 2500);
-      });
-      if (tab) tab.focus();
     });
 
     function setError(msg) {
