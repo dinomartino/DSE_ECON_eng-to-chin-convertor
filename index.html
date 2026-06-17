@@ -1,29 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Economics Translation Prompt Builder · EN → 繁中</title>
+  <title>經濟科翻譯提示產生器 · 英 → 繁中</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --border: #2e3350;
-      --accent: #4f8ef7;
-      --accent-hover: #7aabff;
-      --text: #e8ecf4;
-      --text-muted: #8891aa;
-      --green: #34d399;
-      --red: #f87171;
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface2: #f4f4f5;
+      --border: #d4d4d8;
+      --accent: #000000;
+      --accent-hover: #2a2a2a;
+      --text: #000000;
+      --text-muted: #6b7280;
+      --green: #16a34a;
+      --red: #dc2626;
       --radius: 12px;
-      --shadow: 0 4px 24px rgba(0,0,0,.45);
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
     }
 
     body {
-      background: var(--bg);
+      background: #fafafa;
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       min-height: 100vh;
@@ -149,8 +149,8 @@
       flex-direction: column;
       gap: 3px;
     }
-    .match-en { font-size: 0.82rem; color: var(--accent); font-weight: 600; }
-    .match-zh { font-size: 0.9rem; color: var(--text); }
+    .match-en { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
+    .match-zh { font-size: 0.95rem; color: var(--text); font-weight: 600; }
 
     /* Prompt output */
     #output-section { display: none; }
@@ -203,19 +203,19 @@
 </head>
 <body>
   <header>
-    <h1>Economics Prompt Builder &nbsp;EN → 繁中</h1>
-    <p>Builds a glossary-grounded prompt from the HKSAR Economics Glossary (1,320 terms) — copy it into ChatGPT, Gemini, Claude, or any chatbot.</p>
+    <h1>經濟科翻譯提示產生器 &nbsp;英 → 繁中</h1>
+    <p>根據香港經濟科詞彙表（1,320 個官方詞彙）建立提示，可複製到 ChatGPT、Gemini、Claude 或任何 AI 聊天機械人使用。</p>
   </header>
 
   <div class="container">
 
     <!-- Input -->
     <div class="card">
-      <label for="input-text">Enter your economics question or text (English)</label>
-      <textarea id="input-text" placeholder="e.g. How does aggregate demand affect the price level in a Keynesian model?"></textarea>
+      <label for="input-text">輸入你的經濟科問題或英文內容</label>
+      <textarea id="input-text" placeholder="例如：How does aggregate demand affect the price level in a Keynesian model?"></textarea>
       <div class="actions">
-        <button class="btn-primary" id="btn-build">Build Translation Prompt</button>
-        <button class="btn-secondary" id="btn-clear">Clear</button>
+        <button class="btn-primary" id="btn-build">建立翻譯提示</button>
+        <button class="btn-secondary" id="btn-clear">清除</button>
       </div>
       <div class="error-box" id="error-box"></div>
     </div>
@@ -223,7 +223,7 @@
     <!-- Glossary matches -->
     <div class="card" id="matches-section">
       <div class="matches-header">
-        <label style="margin:0">Glossary Matches Found</label>
+        <label style="margin:0">找到的詞彙配對</label>
         <span class="badge" id="match-count">0</span>
       </div>
       <div class="matches-grid" id="matches-grid"></div>
@@ -231,13 +231,13 @@
 
     <!-- Prompt output -->
     <div class="card" id="output-section">
-      <label>Your Prompt — copy &amp; paste into any chatbot</label>
+      <label>你的提示 — 複製並貼上到任何 AI 聊天機械人</label>
       <div class="prompt-box" id="prompt-output"></div>
       <div class="copy-row">
-        <button class="btn-secondary" id="btn-copy">Copy Prompt</button>
-        <button class="btn-primary" id="btn-gemini">Copy &amp; Open Gemini</button>
+        <button class="btn-secondary" id="btn-copy">複製提示</button>
+        <button class="btn-primary" id="btn-gemini">複製並開啟 Gemini</button>
       </div>
-      <p class="hint">Paste this into ChatGPT, Gemini, Claude, or your AI of choice to get the Traditional Chinese (HKSAR-standard) translation. <strong>Open Gemini</strong> copies the prompt and opens Gemini in a new tab — just paste (⌘/Ctrl+V).</p>
+      <p class="hint">將內容貼上到 ChatGPT、Gemini、Claude 或你慣用的 AI，即可取得繁體中文（香港標準）翻譯。<strong>開啟 Gemini</strong> 會複製提示並在新分頁開啟 Gemini，貼上即可（⌘/Ctrl + V）。</p>
     </div>
 
   </div>
@@ -261,7 +261,7 @@
     fetch("glossary.json")
       .then(r => r.json())
       .then(data => { ENTRIES = data.entries || {}; })
-      .catch(() => setError("Could not load glossary.json."));
+      .catch(() => setError("無法載入詞彙表 glossary.json。"));
 
     // Return all glossary pairs whose English term appears in the text (case-insensitive),
     // longest match first so the most specific terms lead.
@@ -323,7 +323,7 @@
       const text = inputEl.value.trim();
       setError("");
       if (!text) {
-        setError("Please enter some text first.");
+        setError("請先輸入內容。");
         return;
       }
       const matches = findMatchingPairs(text);
@@ -343,8 +343,8 @@
 
     btnCopy.addEventListener("click", () => {
       navigator.clipboard.writeText(promptOutput.textContent).then(() => {
-        btnCopy.textContent = "Copied!";
-        setTimeout(() => btnCopy.textContent = "Copy Prompt", 1500);
+        btnCopy.textContent = "已複製！";
+        setTimeout(() => btnCopy.textContent = "複製提示", 1500);
       });
     });
 
@@ -355,11 +355,11 @@
     btnGemini.addEventListener("click", () => {
       const tab = window.open("https://gemini.google.com/app", "_blank", "noopener");
       navigator.clipboard.writeText(promptOutput.textContent).then(() => {
-        btnGemini.textContent = "Copied — paste in Gemini";
-        setTimeout(() => btnGemini.innerHTML = "Copy &amp; Open Gemini", 2500);
+        btnGemini.textContent = "已複製 — 請在 Gemini 貼上";
+        setTimeout(() => btnGemini.innerHTML = "複製並開啟 Gemini", 2500);
       }).catch(() => {
-        btnGemini.textContent = "Opened Gemini — copy manually";
-        setTimeout(() => btnGemini.innerHTML = "Copy &amp; Open Gemini", 2500);
+        btnGemini.textContent = "已開啟 Gemini — 請手動複製";
+        setTimeout(() => btnGemini.innerHTML = "複製並開啟 Gemini", 2500);
       });
       if (tab) tab.focus();
     });
