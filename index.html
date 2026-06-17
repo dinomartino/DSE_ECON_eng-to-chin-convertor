@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Economics Translation Prompt Builder · EN → 繁中</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #4f8ef7;
+      --accent-hover: #7aabff;
+      --text: #e8ecf4;
+      --text-muted: #8891aa;
+      --green: #34d399;
+      --red: #f87171;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,.45);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 12px 14px;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--text-muted); }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 22px;
+      transition: background .2s, opacity .2s, border-color .2s, color .2s;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+    /* Glossary matches */
+    #matches-section { display: none; }
+    .matches-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 10px;
+    }
+    .matches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .matches-grid::-webkit-scrollbar { width: 5px; }
+    .matches-grid::-webkit-scrollbar-track { background: transparent; }
+    .matches-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .match-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .match-en { font-size: 0.82rem; color: var(--accent); font-weight: 600; }
+    .match-zh { font-size: 0.9rem; color: var(--text); }
+
+    /* Prompt output */
+    #output-section { display: none; }
+    .prompt-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.92rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .prompt-box::-webkit-scrollbar { width: 5px; }
+    .prompt-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .copy-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .hint {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .error-box {
+      background: rgba(248, 113, 113, .12);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    @media (max-width: 520px) {
+      .card { padding: 16px; }
+      .actions { flex-direction: column; }
+      .actions button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Economics Prompt Builder &nbsp;EN → 繁中</h1>
+    <p>Builds a glossary-grounded prompt from the HKSAR Economics Glossary (1,320 terms) — copy it into ChatGPT, Gemini, Claude, or any chatbot.</p>
+  </header>
+
+  <div class="container">
+
+    <!-- Input -->
+    <div class="card">
+      <label for="input-text">Enter your economics question or text (English)</label>
+      <textarea id="input-text" placeholder="e.g. How does aggregate demand affect the price level in a Keynesian model?"></textarea>
+      <div class="actions">
+        <button class="btn-primary" id="btn-build">Build Translation Prompt</button>
+        <button class="btn-secondary" id="btn-clear">Clear</button>
+      </div>
+      <div class="error-box" id="error-box"></div>
+    </div>
+
+    <!-- Glossary matches -->
+    <div class="card" id="matches-section">
+      <div class="matches-header">
+        <label style="margin:0">Glossary Matches Found</label>
+        <span class="badge" id="match-count">0</span>
+      </div>
+      <div class="matches-grid" id="matches-grid"></div>
+    </div>
+
+    <!-- Prompt output -->
+    <div class="card" id="output-section">
+      <label>Your Prompt — copy &amp; paste into any chatbot</label>
+      <div class="prompt-box" id="prompt-output"></div>
+      <div class="copy-row">
+        <button class="btn-secondary" id="btn-copy">Copy Prompt</button>
+        <button class="btn-primary" id="btn-gemini">Copy &amp; Open Gemini</button>
+      </div>
+      <p class="hint">Paste this into ChatGPT, Gemini, Claude, or your AI of choice to get the Traditional Chinese (HKSAR-standard) translation. <strong>Open Gemini</strong> copies the prompt and opens Gemini in a new tab — just paste (⌘/Ctrl+V).</p>
+    </div>
+
+  </div>
+
+  <script>
+    let ENTRIES = {};
+
+    const inputEl = document.getElementById("input-text");
+    const btnBuild = document.getElementById("btn-build");
+    const btnClear = document.getElementById("btn-clear");
+    const btnCopy = document.getElementById("btn-copy");
+    const btnGemini = document.getElementById("btn-gemini");
+    const matchesSection = document.getElementById("matches-section");
+    const matchesGrid = document.getElementById("matches-grid");
+    const matchCount = document.getElementById("match-count");
+    const outputSection = document.getElementById("output-section");
+    const promptOutput = document.getElementById("prompt-output");
+    const errorBox = document.getElementById("error-box");
+
+    // Load the glossary once
+    fetch("glossary.json")
+      .then(r => r.json())
+      .then(data => { ENTRIES = data.entries || {}; })
+      .catch(() => setError("Could not load glossary.json."));
+
+    // Return all glossary pairs whose English term appears in the text (case-insensitive),
+    // longest match first so the most specific terms lead.
+    function findMatchingPairs(text) {
+      const lower = text.toLowerCase();
+      const matches = [];
+      for (const [eng, chi] of Object.entries(ENTRIES)) {
+        if (lower.includes(eng.toLowerCase())) {
+          matches.push({ english: eng, chinese: chi });
+        }
+      }
+      matches.sort((a, b) => b.english.length - a.english.length);
+      return matches;
+    }
+
+    function buildPrompt(text, matches) {
+      let glossaryBlock = "";
+      if (matches.length) {
+        const lines = matches.map(m => `  ${m.english} → ${m.chinese}`).join("\n");
+        glossaryBlock =
+          "Use the following economics glossary to ensure accurate terminology " +
+          "(Traditional Chinese, HKSAR standard):\n" + lines + "\n\n";
+      }
+      return glossaryBlock +
+        "Translate the following text into Traditional Chinese. " +
+        "Return only the translation, no explanations:\n\n" + text;
+    }
+
+    let debounceTimer = null;
+    inputEl.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => liveSearch(inputEl.value), 250);
+    });
+
+    function liveSearch(text) {
+      if (!text.trim()) {
+        matchesSection.style.display = "none";
+        return;
+      }
+      renderMatches(findMatchingPairs(text));
+    }
+
+    function renderMatches(matches) {
+      if (!matches.length) {
+        matchesSection.style.display = "none";
+        return;
+      }
+      matchCount.textContent = matches.length;
+      matchesGrid.innerHTML = matches.map(m => `
+        <div class="match-item">
+          <span class="match-en">${escapeHtml(m.english)}</span>
+          <span class="match-zh">${escapeHtml(m.chinese)}</span>
+        </div>
+      `).join("");
+      matchesSection.style.display = "block";
+    }
+
+    btnBuild.addEventListener("click", () => {
+      const text = inputEl.value.trim();
+      setError("");
+      if (!text) {
+        setError("Please enter some text first.");
+        return;
+      }
+      const matches = findMatchingPairs(text);
+      renderMatches(matches);
+      promptOutput.textContent = buildPrompt(text, matches);
+      outputSection.style.display = "block";
+      outputSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    btnClear.addEventListener("click", () => {
+      inputEl.value = "";
+      matchesSection.style.display = "none";
+      outputSection.style.display = "none";
+      setError("");
+      inputEl.focus();
+    });
+
+    btnCopy.addEventListener("click", () => {
+      navigator.clipboard.writeText(promptOutput.textContent).then(() => {
+        btnCopy.textContent = "Copied!";
+        setTimeout(() => btnCopy.textContent = "Copy Prompt", 1500);
+      });
+    });
+
+    // Copy the prompt, then open Gemini in a new tab so the user can paste it.
+    // Gemini's web app has no reliable URL param to prefill the prompt, so we
+    // open the tab first (inside the click handler, to avoid popup blocking)
+    // and copy in parallel.
+    btnGemini.addEventListener("click", () => {
+      const tab = window.open("https://gemini.google.com/app", "_blank", "noopener");
+      navigator.clipboard.writeText(promptOutput.textContent).then(() => {
+        btnGemini.textContent = "Copied — paste in Gemini";
+        setTimeout(() => btnGemini.innerHTML = "Copy &amp; Open Gemini", 2500);
+      }).catch(() => {
+        btnGemini.textContent = "Opened Gemini — copy manually";
+        setTimeout(() => btnGemini.innerHTML = "Copy &amp; Open Gemini", 2500);
+      });
+      if (tab) tab.focus();
+    });
+
+    function setError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = msg ? "block" : "none";
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+  </script>
+</body>
+</html>
