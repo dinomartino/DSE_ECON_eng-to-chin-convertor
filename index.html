@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DSE ECON翻譯提示產生器 · 英 → 繁中</title>
+  <title>DSE 翻譯提示產生器 · 英 ⇄ 繁中</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -30,7 +30,7 @@
       padding: 24px 16px 60px;
     }
 
-    header { text-align: center; margin-bottom: 32px; }
+    header { text-align: center; margin-bottom: 24px; }
     header h1 {
       font-size: clamp(1.4rem, 4vw, 2rem);
       font-weight: 700;
@@ -66,6 +66,40 @@
       text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 8px;
+    }
+
+    /* Toggle bars (subject + direction) */
+    .toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .toggle-row { display: flex; flex-direction: column; gap: 6px; }
+    .seg {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 5px;
+    }
+    .seg button {
+      flex: 1 1 auto;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .seg button:hover:not(.active) { color: var(--text); }
+    .seg button.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow);
     }
 
     textarea {
@@ -198,23 +232,39 @@
       .card { padding: 16px; }
       .actions { flex-direction: column; }
       .actions button { width: 100%; }
+      .seg button { flex: 1 1 40%; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>DSE Econ翻譯提示產生器 &nbsp;英 → 中</h1>
-    <p>根據香港教育局經濟科詞彙表（1,320 個官方詞彙）建立提示，可複製到 ChatGPT、Gemini、Claude 或任何 AI 聊天機械人使用。</p>
+    <h1>DSE 翻譯提示產生器 &nbsp;英 ⇄ 中</h1>
+    <p>根據香港教育局官方英漢詞彙表建立翻譯提示，可複製到 ChatGPT、Gemini、Claude 或任何 AI 聊天機械人使用。</p>
   </header>
 
   <div class="container">
 
+    <!-- Subject + direction toggles -->
+    <div class="card toolbar">
+      <div class="toggle-row">
+        <label>選擇科目</label>
+        <div class="seg" id="subject-bar"></div>
+      </div>
+      <div class="toggle-row">
+        <label>翻譯方向</label>
+        <div class="seg" id="direction-bar">
+          <button data-dir="en2zh" class="active">英文 → 繁體中文</button>
+          <button data-dir="zh2en">繁體中文 → 英文</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Input -->
     <div class="card">
-      <label for="input-text">輸入你的Econ問題或英文內容</label>
-      <textarea id="input-text" placeholder="例如：How does aggregate demand affect the price level?"></textarea>
+      <label for="input-text" id="input-label">輸入英文內容</label>
+      <textarea id="input-text"></textarea>
       <div class="actions">
-        <button class="btn-primary" id="btn-build">建立翻譯Prompt</button>
+        <button class="btn-primary" id="btn-build">建立翻譯 Prompt</button>
         <button class="btn-secondary" id="btn-clear">清除</button>
       </div>
       <div class="error-box" id="error-box"></div>
@@ -236,18 +286,38 @@
       <div class="copy-row">
         <button class="btn-primary" id="btn-copy">複製提示</button>
       </div>
-      <p class="hint">將內容貼上到 ChatGPT、Gemini、Claude 或你慣用的 AI，即可取得繁體中文（香港標準）翻譯。</p>
+      <p class="hint">將內容貼上到 ChatGPT、Gemini、Claude 或你慣用的 AI，即可取得詞彙準確的翻譯。</p>
     </div>
 
   </div>
 
   <script>
+    // ---- Subjects: maps to glossaries/<file> ----
+    const SUBJECTS = [
+      { id: "economics", file: "glossaries/economics.json", zh: "經濟", en: "Economics" },
+      { id: "ces",       file: "glossaries/ces.json",       zh: "公經社", en: "Citizenship, Economics & Society" },
+      { id: "geography", file: "glossaries/geography.json", zh: "地理", en: "Geography" },
+      { id: "history",   file: "glossaries/history.json",   zh: "歷史", en: "History" },
+      { id: "ths",       file: "glossaries/ths.json",       zh: "旅遊與款待", en: "Tourism & Hospitality" },
+    ];
+
+    const PLACEHOLDERS = {
+      en2zh: "例如：How does aggregate demand affect the price level?",
+      zh2en: "例如：總需求如何影響物價水平？",
+    };
+
+    let activeSubject = SUBJECTS[0].id;
+    let direction = "en2zh";              // default English → Traditional Chinese
+    const cache = {};                     // id -> { entries }
     let ENTRIES = {};
 
     const inputEl = document.getElementById("input-text");
+    const inputLabel = document.getElementById("input-label");
     const btnBuild = document.getElementById("btn-build");
     const btnClear = document.getElementById("btn-clear");
     const btnCopy = document.getElementById("btn-copy");
+    const subjectBar = document.getElementById("subject-bar");
+    const directionBar = document.getElementById("direction-bar");
     const matchesSection = document.getElementById("matches-section");
     const matchesGrid = document.getElementById("matches-grid");
     const matchCount = document.getElementById("match-count");
@@ -255,36 +325,120 @@
     const promptOutput = document.getElementById("prompt-output");
     const errorBox = document.getElementById("error-box");
 
-    // Load the glossary once
-    fetch("glossary.json")
-      .then(r => r.json())
-      .then(data => { ENTRIES = data.entries || {}; })
-      .catch(() => setError("無法載入詞彙表 glossary.json。"));
+    // ---- Build subject toggle bar ----
+    SUBJECTS.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.textContent = s.zh;
+      b.title = s.en;
+      b.dataset.subject = s.id;
+      if (i === 0) b.classList.add("active");
+      b.addEventListener("click", () => selectSubject(s.id));
+      subjectBar.appendChild(b);
+    });
 
-    // Return all glossary pairs whose English term appears in the text (case-insensitive),
-    // longest match first so the most specific terms lead.
-    function findMatchingPairs(text) {
-      const lower = text.toLowerCase();
-      const matches = [];
-      for (const [eng, chi] of Object.entries(ENTRIES)) {
-        if (lower.includes(eng.toLowerCase())) {
-          matches.push({ english: eng, chinese: chi });
-        }
+    function currentSubject() {
+      return SUBJECTS.find(s => s.id === activeSubject);
+    }
+
+    // ---- Load a glossary (cached) and refresh the live view ----
+    async function loadSubject(id) {
+      if (cache[id]) { ENTRIES = cache[id]; return; }
+      const sub = SUBJECTS.find(s => s.id === id);
+      try {
+        const data = await (await fetch(sub.file)).json();
+        cache[id] = data.entries || {};
+        ENTRIES = cache[id];
+      } catch (_) {
+        ENTRIES = {};
+        setError("無法載入詞彙表：" + sub.file);
       }
-      matches.sort((a, b) => b.english.length - a.english.length);
-      return matches;
+    }
+
+    async function selectSubject(id) {
+      activeSubject = id;
+      [...subjectBar.children].forEach(b =>
+        b.classList.toggle("active", b.dataset.subject === id));
+      setError("");
+      await loadSubject(id);
+      liveSearch(inputEl.value);
+    }
+
+    function selectDirection(dir) {
+      direction = dir;
+      [...directionBar.children].forEach(b =>
+        b.classList.toggle("active", b.dataset.dir === dir));
+      inputEl.placeholder = PLACEHOLDERS[dir];
+      inputLabel.textContent = dir === "en2zh" ? "輸入英文內容" : "輸入繁體中文內容";
+      liveSearch(inputEl.value);
+    }
+    directionBar.querySelectorAll("button").forEach(b =>
+      b.addEventListener("click", () => selectDirection(b.dataset.dir)));
+
+    // ---- Matching (direction-aware) ----
+    // en2zh: scan the input for English keys.
+    // zh2en: scan the input for Chinese translations (each value may hold several
+    //        synonyms split by / ／ ； ; , ，— we test every fragment).
+    function findMatchingPairs(text) {
+      const matches = [];
+      if (direction === "en2zh") {
+        const lower = text.toLowerCase();
+        for (const [eng, chi] of Object.entries(ENTRIES)) {
+          if (lower.includes(eng.toLowerCase())) {
+            matches.push({ english: eng, chinese: chi, hit: eng });
+          }
+        }
+        matches.sort((a, b) => b.hit.length - a.hit.length);
+      } else {
+        for (const [eng, chi] of Object.entries(ENTRIES)) {
+          // Split a translation into candidate Chinese synonyms on real separators
+          // only (slash / semicolon / comma / 、 and numbered-sense markers). We do
+          // NOT split on brackets, because optional parts like 風化 [作用] must stay
+          // whole — otherwise a generic tail like 作用 would match almost everything.
+          // For each fragment we also offer a bracket-stripped form so 風化 [作用]
+          // matches the user's 風化作用.
+          const frags = [];
+          for (let f of chi.split(/[\/／；;，,、]|\([0-9０-９]+\)|（[0-9０-９]+）/)) {
+            f = f.trim();
+            if (f.length >= 2) frags.push(f);
+            const stripped = f.replace(/[\[\]｛｝{}（）()<>＜＞〈〉【】]/g, "").replace(/\s+/g, "").trim();
+            if (stripped.length >= 2 && stripped !== f) frags.push(stripped);
+          }
+          // Match on the longest fragment present in the input (most specific wins),
+          // and require ≥2 Han characters so single generic chars don't over-match.
+          let hit = null;
+          for (const f of frags) {
+            if (f.length >= 2 && text.includes(f) && (!hit || f.length > hit.length)) hit = f;
+          }
+          if (hit) matches.push({ english: eng, chinese: chi, hit });
+        }
+        matches.sort((a, b) => b.hit.length - a.hit.length);
+      }
+      // De-duplicate on the english term, keep first (longest hit) occurrence.
+      const seen = new Set();
+      return matches.filter(m => !seen.has(m.english) && seen.add(m.english));
     }
 
     function buildPrompt(text, matches) {
+      const sub = currentSubject();
+      const subjectName = sub.en;
       let glossaryBlock = "";
       if (matches.length) {
-        const lines = matches.map(m => `  ${m.english} → ${m.chinese}`).join("\n");
+        const lines = matches
+          .map(m => direction === "en2zh"
+            ? `  ${m.english} → ${m.chinese}`
+            : `  ${m.chinese} → ${m.english}`)
+          .join("\n");
         glossaryBlock =
-          "Use the following economics glossary to ensure accurate terminology " +
-          "(Traditional Chinese, HKSAR standard):\n" + lines + "\n\n";
+          `Use the following official HKSAR ${subjectName} glossary to ensure accurate terminology:\n` +
+          lines + "\n\n";
+      }
+      if (direction === "en2zh") {
+        return glossaryBlock +
+          "Translate the following text into Traditional Chinese (Hong Kong standard). " +
+          "Return only the translation, no explanations:\n\n" + text;
       }
       return glossaryBlock +
-        "Translate the following text into Traditional Chinese. " +
+        "Translate the following Traditional Chinese text into English. " +
         "Return only the translation, no explanations:\n\n" + text;
     }
 
@@ -295,18 +449,12 @@
     });
 
     function liveSearch(text) {
-      if (!text.trim()) {
-        matchesSection.style.display = "none";
-        return;
-      }
+      if (!text.trim()) { matchesSection.style.display = "none"; return; }
       renderMatches(findMatchingPairs(text));
     }
 
     function renderMatches(matches) {
-      if (!matches.length) {
-        matchesSection.style.display = "none";
-        return;
-      }
+      if (!matches.length) { matchesSection.style.display = "none"; return; }
       matchCount.textContent = matches.length;
       matchesGrid.innerHTML = matches.map(m => `
         <div class="match-item">
@@ -320,10 +468,7 @@
     btnBuild.addEventListener("click", () => {
       const text = inputEl.value.trim();
       setError("");
-      if (!text) {
-        setError("請先輸入內容。");
-        return;
-      }
+      if (!text) { setError("請先輸入內容。"); return; }
       const matches = findMatchingPairs(text);
       renderMatches(matches);
       promptOutput.textContent = buildPrompt(text, matches);
@@ -354,6 +499,10 @@
     function escapeHtml(s) {
       return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     }
+
+    // ---- Init ----
+    inputEl.placeholder = PLACEHOLDERS.en2zh;
+    loadSubject(activeSubject);
   </script>
 </body>
 </html>
